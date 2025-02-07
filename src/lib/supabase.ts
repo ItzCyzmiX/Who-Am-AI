@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_KEY } from '$env/static/private';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-const supabaseUrl = 'https://sgvkmwnesmllzgmdpddw.supabase.co';
-const supabase = createClient(supabaseUrl, SUPABASE_KEY, {
+const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     auth: {
         persistSession: true,
         autoRefreshToken: true,
