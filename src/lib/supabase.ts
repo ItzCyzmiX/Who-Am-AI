@@ -116,5 +116,6 @@ export default getRandomCharacter;
 export {
     signIn,
     getUserdata,
-    updateUserdata
+    updateUserdata,
+	supabase
 }
