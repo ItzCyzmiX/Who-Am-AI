@@ -1,8 +1,12 @@
 <script>
 	import '../app.css';
+	
+	import { dev } from '$app/environment';
+    import { inject } from '@vercel/analytics';
+	
 	let { children } = $props();
-
-	import BgDarkTiles from "$lib/BgDarkTiles.svelte";
+    // Inject the Analytics functionality
+    inject({ mode: dev ? 'development' : 'production' });
   </script>
   
 
