@@ -13,6 +13,12 @@ Who Am AI? is a web-based game that challenges players to identify anime charact
 - Dynamic scoring system
 - Responsive design for various devices
 - Character avatars and series information
+## Character Data
+
+The characters featured in Who Am AI? have been sourced through web scraping. For more information on the data collection process, please visit our dedicated scraping project repository:
+
+[Anime Character Scraper](https://github.com//ItzCyzmiX/Anime-Scrapper)
+
 
 ## Technology Stack
 
