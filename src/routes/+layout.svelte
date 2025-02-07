@@ -3,9 +3,30 @@
 	
 	import { dev } from '$app/environment';
     import { injectAnalytics } from '@vercel/analytics/sveltekit';
+	import { onMount } from 'svelte';
+	import { supabase } from '$lib/supabase';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	
 	let { children } = $props();
-    // Inject the Analytics functionality
+	
+	onMount(() => {
+		// Set up auth state listener
+		const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+			if (event === 'SIGNED_OUT') {
+				// Redirect to login page if not already there
+				if (!$page.url.pathname.includes('/login')) {
+					goto('/login');
+				}
+			}
+		});
+
+		return () => {
+			subscription.unsubscribe();
+		};
+	});
+
+	// Inject the Analytics functionality
     injectAnalytics({ mode: dev ? 'development' : 'production' });
   </script>
   

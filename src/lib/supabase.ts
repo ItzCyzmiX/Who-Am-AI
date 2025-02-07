@@ -1,15 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_KEY } from '$env/static/private';
 
-
 const supabaseUrl = 'https://sgvkmwnesmllzgmdpddw.supabase.co';
-const supabase = createClient(supabaseUrl, SUPABASE_KEY);
-
+const supabase = createClient(supabaseUrl, SUPABASE_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});
 
 interface Credentials {
-	username?: string,
-	email: string,
-	password: string
+    username?: string,
+    email: string,
+    password: string
 }
 
 async function getUserdata() {
@@ -34,46 +38,46 @@ async function getUserdata() {
 }
 
 async function updateUserdata(new_data) {
-	let res = await supabase.auth.updateUser({
-		data: {
-			...new_data
-		}
-	})
-	console.log(res)
-	return res.error
+    let res = await supabase.auth.updateUser({
+        data: {
+            ...new_data
+        }
+    })
+    console.log(res)
+    return res.error
 }
 
 async function signIn(method: string, credentials: Credentials) {
-	if (method === 'login') {
-		const login = await supabase.auth.signInWithPassword({
-			email: credentials.email,
-			password: credentials.password
-		});
+    if (method === 'login') {
+        const login = await supabase.auth.signInWithPassword({
+            email: credentials.email,
+            password: credentials.password
+        });
 
-		if (login.error) {
-			if (login.error.code === 'email_not_confirmed') {
-				return 'unconfirmed'
-			}
-			return false
-		}
-	} else {
-		const login = await supabase.auth.signUp({
-			email: credentials.email,
-			password: credentials.password,
-			options: {
-				data: {
-					username: credentials.username,
-					solved: [],
-					points: 0
-				}
-			}
-		})
-		if (login.error) {
-			return false
-		}
-	}
+        if (login.error) {
+            if (login.error.code === 'email_not_confirmed') {
+                return 'unconfirmed'
+            }
+            return false
+        }
+    } else {
+        const login = await supabase.auth.signUp({
+            email: credentials.email,
+            password: credentials.password,
+            options: {
+                data: {
+                    username: credentials.username,
+                    solved: [],
+                    points: 0
+                }
+            }
+        })
+        if (login.error) {
+            return false
+        }
+    }
 
-	return true
+    return true
 }
 
 async function getRandomCharacter() {
@@ -107,11 +111,10 @@ async function getRandomCharacter() {
     return Characters[Math.floor(Math.random() * Characters.length)];
 }
 
-
 export default getRandomCharacter;
 
 export {
-	signIn,
-	getUserdata,
-	updateUserdata
+    signIn,
+    getUserdata,
+    updateUserdata
 }
