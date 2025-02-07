@@ -2,11 +2,11 @@
 	import '../app.css';
 	
 	import { dev } from '$app/environment';
-    import { inject } from '@vercel/analytics';
+    import { injectAnalytics } from '@vercel/analytics/sveltekit';
 	
 	let { children } = $props();
     // Inject the Analytics functionality
-    inject({ mode: dev ? 'development' : 'production' });
+    injectAnalytics({ mode: dev ? 'development' : 'production' });
   </script>
   
 
