@@ -1,13 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://sgvkmwnesmllzgmdpddw.supabase.co';
-const supabase = createClient(supabaseUrl, import.meta.env.VITE_SUPABASE_KEY, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-    }
-});
+const supabase = createClient(supabaseUrl, import.meta.env.VITE_SUPABASE_KEY);
 
 interface Credentials {
     username?: string,

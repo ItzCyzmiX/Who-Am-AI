@@ -2,8 +2,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { fade, fly, slide } from 'svelte/transition';
+	import { fade, fly, slide, scale } from 'svelte/transition';
 	import BgDarkTiles from "$lib/BgDarkTiles.svelte"
+	import getRandomCharacter, { getUserdata, updateUserdata } from '$lib/supabase';
 
 	let loading = $state(true);
 
@@ -19,6 +20,8 @@
 		avatar: ''
 	});
 
+	let myPoints = $state(0)
+
 	let preloadedImage: HTMLImageElement | null = $state(null);
 
 	let textareaElement: HTMLTextAreaElement;
@@ -33,7 +36,11 @@
 	let isTyping = $state(false);
 
 	let shouldAutoScroll = true;
-
+    let toast = $state({ show: false, message: '', type: '' });
+    function showToast(message: string, type: 'success' | 'error') {
+		toast = { show: true, message, type };
+		setTimeout(() => toast = { ...toast, show: false }, 3000);
+	}
 	// Function to scroll to bottom
 	const scrollToBottom = (type = 'smooth') => {
 		if (!chatContainer) return;
@@ -160,6 +167,7 @@
 
 			method: 'POST'
 		});
+		
 		const { response, fun_text, did_guess } = await res.json();
 		// console.log(json)
 		
@@ -181,26 +189,15 @@
 		isTyping = false;
 		hasGuessed = did_guess;
 		if (did_guess) {
-			let res = await fetch('/login', {
-            	method: "GET"
-			})
-			
-			let js = await res.json()
-			console.log(js)
-			let { username, points, solved } = js
-			
-			let res2 = await fetch('/api', {
-				method: "POST",
-				body: JSON.stringify({
-					points: points + Math.max(100-(messages.length/2), 0),
-					solved: [...solved, {
-						'name': character.name,
-						"series": character.series,
-						"avatar": character.avatar
-					}]
-				})
-			})
-
+			let { username, points, solved } = await getUserdata()
+			let res2 = await updateUserdata({
+				points: myPoints + Math.max(100-(messages.length/2), 0),
+				solved: [...solved, {
+					'name': character.name,
+					"series": character.series,
+					"avatar": character.avatar
+				}]
+			}) 
 			console.log(res2)
 		}
 		
@@ -222,17 +219,10 @@
 	async function reset() {
 		loading = true;
 		
-		const res = await fetch('/game', {
-			method: 'GET'
-		});
-
-		const data = await res.json();
-
-		if (!data?.character) {
-			goto('/login')
-		}
-
-		character = data.character;
+		let { username, points, solved } = await getUserdata()
+		myPoints = points
+		let char = await getRandomCharacter()
+		character = char;
 
 		// Preload the image before finishing reset
 		try {
@@ -266,21 +256,59 @@
 		console.log(character)
 	});
 
+	let showHowToPlay = $state(false);
+    let showHint = $state(false)
+
 	
 
-	let showHowToPlay = $state(false);
+    function toggleHowToPlay() {
+        showHowToPlay = !showHowToPlay;
+        if (showHowToPlay) {
+            localStorage.setItem('howToPlayShown', 'true');
+        }
+    }
+    let showPointLoss = $state(false);
+    let pointLossPosition = $state({ x: 0, y: 0 });
 
-	function toggleHowToPlay() {
-		showHowToPlay = !showHowToPlay;
-
-		if (showHowToPlay) {
-			localStorage.setItem('howToPlayShown', 'true');
+    async function toggleHint(e: MouseEvent) {
+		if (!showHint && myPoints<100) {
+			showToast('Insufficent points!', "error")
+			return
 		}
-	}
+        showHint = !showHint;
+
+		if (showHint) {
+			pointLossPosition = { x: e.clientX, y: e.clientY };
+            showPointLoss = true;
+            setTimeout(() => showPointLoss = false, 1000);
+            
+			myPoints -= 100
+			let res = await updateUserdata({
+				points: myPoints
+			})
+		}
+    }
 </script>
+{#if toast.show}
+	<div
+		transition:fly={{ y: 50, duration: 300 }}
+		class="fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 {toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'}"
+	>
+		{toast.message}
+	</div>
+{/if}
+{#if showPointLoss}
+    <div
+        transition:scale={{ duration: 700, start: 1, opacity: 1 }}
+        class="fixed text-red-500 font-bold text-xl pointer-events-none z-50"
+        style="left: {pointLossPosition.x}px; top: {pointLossPosition.y - 20}px; transform: translate(-50%, -50%); animation: floatUp 1s ease-out forwards;"
+    >
+        -100
+    </div>
+{/if}
 
 	{#if showHowToPlay}
-		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
+		<div class="pointer-events-none fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
 			<div class="bg-[#0a0a0a] p-6 rounded-lg max-w-md border border-white/30">
 				<h2 class="text-2xl font-bold mb-4 text-white">How to Play</h2>
 				<ul class="list-disc list-inside text-white space-y-2">
@@ -288,6 +316,7 @@
 					<li>Ask questions to figure out who they are.</li>
 					<li>Try to guess their identity as quickly as possible.</li>
 					<li>The fewer questions you ask, the more points you earn!</li>
+					<li>Hints remove 100 points!</li>
 				</ul>
 				<button onclick={toggleHowToPlay} class="mt-6 bg-white text-black px-4 py-2 rounded hover:bg-gray-200">
 					Close
@@ -297,7 +326,7 @@
 	{/if}
 
 
-<div class="relative flex h-screen flex-col bg-black" class:opacity-50={loading}>
+<div class="relative flex h-screen flex-col bg-black" class:opacity-50={loading || hasGuessed}>
 	<div class="relative z-10 border-b border-white/10 backdrop-blur-sm">
 		<!-- Fixed header -->
 		<div class="mx-auto max-w-6xl px-4 py-4 flex justify-between items-center">
@@ -310,7 +339,7 @@
 			</button>
 		</div>
 	</div>
-	<div class="absolute top-0 left-0 h-full w-full opacity-30">
+	<div class="pointer-events-none absolute top-0 left-0 h-full w-full opacity-30">
 		<BgDarkTiles r={20} c={10} />
 	</div>
 	<!-- Chat container -->
@@ -348,10 +377,18 @@
 			{/if}
 		</div>
 	</div>
-
+	<div class="mx-auto  px-3">
+		<button onclick={(e) => toggleHint(e)}  class="hover:cursor-pointer font-semibold flex items-center bg-black border p-3  border-white/40 rounded-t-xl text-white hover:text-gray-300 text-sm">
+			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+			</svg>
+			Need a hint?
+		</button>
+	</div>
 	<!-- Input area -->
 	<div class="relative z-10 border-t border-white/10 bg-black/50 backdrop-blur-sm">
 		<div class="mx-auto max-w-3xl px-4 py-4">
+
 			<div class="relative">
 				<textarea
 					bind:this={textareaElement}
@@ -376,7 +413,7 @@
 </div>
 {#if loading}
 	<div
-		class="fixed inset-0 flex items-center justify-center"
+		class="pointer-events-none fixed inset-0 flex items-center justify-center"
 		transition:fly={{ duration: 300 }}
 	>
 		<div class="text-center text-white">
@@ -417,7 +454,18 @@
 		</div>
 	</div>
 {/if}
-
+{#if showHint}
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
+        <div class="bg-[#0a0a0a] p-6 rounded-lg max-w-md border border-white/30">
+            <h2 class="text-2xl font-bold mb-4 text-white">Hint</h2>
+            <p class="text-white mb-4">This character is from <bold>  {character.series}</bold></p>
+			<p class="text-white mb-4">Points left: {myPoints}</p>
+            <button onclick={toggleHint} class="mt-6 bg-white text-black px-4 py-2 rounded hover:bg-gray-200">
+                Close
+            </button>
+        </div>
+    </div>
+{/if}
 <style>
 	/* Custom scrollbar for Webkit browsers */
 	::-webkit-scrollbar {
@@ -436,4 +484,15 @@
 	::-webkit-scrollbar-thumb:hover {
 		background: #3f3f46;
 	}
+
+	@keyframes floatUp {
+        0% {
+            transform: translate(-50%, -50%);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(-50%, -150%);
+            opacity: 0;
+        }
+    }
 </style>

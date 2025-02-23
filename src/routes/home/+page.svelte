@@ -3,6 +3,7 @@
     import { fade } from 'svelte/transition';
     import { goto } from '$app/navigation';
     import BgDarkTiles from "$lib/BgDarkTiles.svelte"
+	import { getUserdata } from '$lib/supabase';
 
     let totalCharacters = $state(748);
     let guessedCharacters = $state([]);
@@ -14,16 +15,7 @@
     }
 
     onMount(async () => {
-        let res = await fetch('/login', {
-            method: "GET"
-        })
-
-        let js = await res.json()
-        if (js.error === "not logged") {
-            goto('/login')
-        }
-        console.log(js)
-        let { username, points, solved } = js
+        let { username, points, solved } = await getUserdata()
         guessedCharacters = solved
         myPoints = points 
         userName = username 

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import BgDarkTiles from "$lib/BgDarkTiles.svelte";
 	import { fade, fly } from 'svelte/transition';
+	import { supabase } from "$lib/supabase"
 
 	let email = $state('');
 	let password = $state('');
@@ -18,28 +19,35 @@
 	async function handleAuth(e: Event) {
 		e.preventDefault();
 		loading = true;
-		let mode = isRegistering ? "sign" : "login";
 
 		try {
 			if (password.length < 8) {
 				throw new Error(isRegistering ? 'Password must be 8 characters long' : 'Invalid email or password');
 			}
-			const response = await fetch('/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ mode, email, username, password })
-			});
+			if (isRegistering) {
+				let res = await supabase.auth.signUp({
+					email,
+					password
+				})
 
-			const js = await response.json()
+				if (res.error) {
+					throw new Error('Failed Creating Account')
+				}
 
-			if (js.success==="unconfirmed") {
-				throw new Error('Email adress not confirmed');
-			} 
-			
-			if (!js.success) {
-				throw new Error(isRegistering ? 'Registration failed' : 'Invalid email or password');
+			} else {
+				let res = await supabase.auth.signInWithPassword({
+					email,
+					password
+				})
+
+				if (res.error.code === "email_not_confirmed") {
+					throw new Error('Email adress not confirmed');
+				}
+
+				if (res.error) {
+					throw new Error('Error while login-in')
+				}
 			}
-			
 			if (isRegistering) {
 				showToast('Registration successful. Please confirm your email address.', 'success');
 			} else {
