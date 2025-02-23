@@ -308,7 +308,7 @@
 {/if}
 
 	{#if showHowToPlay}
-		<div class="pointer-events-none fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
+		<div class=" fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
 			<div class="bg-[#0a0a0a] p-6 rounded-lg max-w-md border border-white/30">
 				<h2 class="text-2xl font-bold mb-4 text-white">How to Play</h2>
 				<ul class="list-disc list-inside text-white space-y-2">
@@ -455,7 +455,7 @@
 	</div>
 {/if}
 {#if showHint}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" transition:slide={{axis: 'y'}}>
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" transition:slide={{axis: 'y'}}>
         <div class="bg-[#0a0a0a] p-6 rounded-lg max-w-md border border-white/30">
             <h2 class="text-2xl font-bold mb-4 text-white">Hint</h2>
             <p class="text-white mb-4">This character is from <bold>  {character.series}</bold></p>

@@ -3,7 +3,8 @@
     import { fade } from 'svelte/transition';
     import { goto } from '$app/navigation';
     import BgDarkTiles from "$lib/BgDarkTiles.svelte"
-	import { getUserdata } from '$lib/supabase';
+	import { getUserdata, supabase } from '$lib/supabase';
+    
 
     let totalCharacters = $state(748);
     let guessedCharacters = $state([]);
@@ -26,6 +27,11 @@
     function startNewGame() {
         goto('/game');
     }
+
+    async function handleLogout() {
+        let res = await supabase.auth.signOut()
+        goto('/login');
+    }
 </script>
 
 <div class="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4">
@@ -41,7 +47,7 @@
         <div class="w-full max-w-5xl flex space-x-6" in:fade={{ duration: 300 }}>
 
             
-            <div class="w-2/3 space-y-6">
+            <div class="w-2/3 space-y-4">
                 <div class="bg-[#0a0a0a] rounded-lg p-6 border border-white/20">
                     <h2 class="text-xl font-semibold mb-6">Welcome back, {userName}!</h2>
 
@@ -75,6 +81,16 @@
                 >
                     Start New Game
                 </button>
+                
+
+                <button
+                    onclick={handleLogout}
+                    class="w-full bg-red-600 z-50 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
+                >
+                    Log Out
+                </button>
+
+
             </div>
             <div class="w-1/3 bg-[#0a0a0a] rounded-lg p-6 border border-white/20">
                 <h2 class="text-lg font-semibold mb-4">Characters You've Guessed</h2>

@@ -30,23 +30,25 @@
 					password
 				})
 
-				if (res.error) {
+				if (res?.error) {
 					throw new Error('Failed Creating Account')
 				}
 
 			} else {
-				let res = await supabase.auth.signInWithPassword({
+				let res_ = await supabase.auth.signInWithPassword({
 					email,
 					password
 				})
+				console.log(res_)
+				
+				if (res_?.error) {
+					throw new Error('Error while login-in')
+				}
 
-				if (res.error.code === "email_not_confirmed") {
+				if (res_?.error?.code === "email_not_confirmed") {
 					throw new Error('Email adress not confirmed');
 				}
 
-				if (res.error) {
-					throw new Error('Error while login-in')
-				}
 			}
 			if (isRegistering) {
 				showToast('Registration successful. Please confirm your email address.', 'success');
@@ -55,6 +57,7 @@
 				goto('/home');
 			}
 		} catch (err) {
+			console.log(err)
 			showToast(err.message, 'error');
 		} finally {
 			loading = false;
